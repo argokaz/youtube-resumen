@@ -169,7 +169,6 @@ st.markdown("""
 with st.form("input_form"):
     url = st.text_input("", placeholder="Pega aquí la URL de YouTube...")
     submitted = st.form_submit_button("Generar Resumen", use_container_width=True)
-
 if submitted and url:
     with st.spinner("🔍 Analizando video..."):
         video_id = extraer_video_id(url)
@@ -187,11 +186,18 @@ if submitted and url:
             st.info(f"📦 Procesando {n_chunks} bloques de contenido...")
             progress_bar = st.progress(0)
             
-            partial_summaries = asyncio.run(process_chunks_concurrently(chunks))
+            # Función asíncrona para procesamiento
+            async def process_chunks():
+                partial_summaries = await process_chunks_concurrently(chunks)
+                
+                # Actualizar progreso
+                for i in range(n_chunks):
+                    progress_bar.progress((i + 1) / n_chunks)
+                    await asyncio.sleep(0.01)
+                
+                return partial_summaries
             
-            for i in range(n_chunks):
-                progress_bar.progress((i + 1) / n_chunks)
-                await asyncio.sleep(0.01)
+            partial_summaries = asyncio.run(process_chunks())
             
             st.success("✅ Resúmenes parciales completados")
             
@@ -205,7 +211,7 @@ if submitted and url:
                         full_summary.append(chunk)
                         summary_box.markdown("".join(full_summary))
                 
-                await display_final_summary()
+                asyncio.run(display_final_summary())
 
             with st.expander("📄 Ver Transcripción Completa", expanded=False):
                 st.text_area("", full_text, height=300, label_visibility="collapsed")
