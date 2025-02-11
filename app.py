@@ -129,21 +129,28 @@ if process_button and url:
             chunks = list(chunk_text(full_text))
             progress = st.progress(0)
             
-            # Procesamiento paralelo
-            partial_summaries = await process_chunks(chunks)
+            # Función asíncrona wrapper
+            async def main_processing():
+                # Procesamiento paralelo
+                partial_summaries = await process_chunks(chunks)
+                
+                # Actualizar progreso
+                for i in range(len(chunks)):
+                    progress.progress((i + 1) / len(chunks))
+                    await asyncio.sleep(0.01)
+                
+                # Generar resumen final
+                final_summary = st.empty()
+                full_content = []
+                
+                async for chunk in generate_final_summary(partial_summaries):
+                    full_content.append(chunk)
+                    final_summary.markdown("".join(full_content))
+                
+                return full_content
             
-            # Actualizar progreso
-            for i in range(len(chunks)):
-                progress.progress((i + 1) / len(chunks))
-                await asyncio.sleep(0.01)
-            
-            # Generar resumen final
-            final_summary = st.empty()
-            full_content = []
-            
-            async for chunk in generate_final_summary(partial_summaries):
-                full_content.append(chunk)
-                final_summary.markdown("".join(full_content))
+            # Ejecutar el procesamiento principal
+            full_content = asyncio.run(main_processing())
             
             # Mostrar transcripción
             with st.expander("Ver transcripción completa"):
