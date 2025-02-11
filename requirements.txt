@@ -1,3 +1,4 @@
 streamlit>=1.33.0
-youtube-transcript-api>=0.6.0
+youtube-transcript-api==0.6.1
 openai>=1.12.0
+tenacity>=8.2.3
